@@ -14,6 +14,8 @@ from db.repository.jobs import (create_new_job,
                                 update_job_by_id,
                                 delete_job_by_id)
 from apis.version1.route_login import get_current_user_from_token
+from typing import Optional
+from db.repository.jobs import search_job
 
 router = APIRouter()
 
@@ -40,8 +42,9 @@ def read_jobs(db: Session = Depends(get_db)):
 
 
 @router.put("/update/{id}")  # new
-def update_job(id: int, job: JobCreate, db: Session = Depends(get_db)):
-    message = update_job_by_id(id=id, job=job, db=db, owner_id=retreive_job(id=id, db=db).owner_id)
+def update_job(id: int, job: JobCreate, db: Session = Depends(get_db),
+               current_user: User = Depends(get_current_user_from_token)):
+    message = update_job_by_id(id=id, job=job, db=db, owner_id=current_user.id)
     if not message:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Job with id {id} not found")
@@ -55,6 +58,15 @@ def delete_job(id: int, db: Session = Depends(get_db), current_user: User = Depe
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Job with {id} does not exist")
     if job.owner_id == current_user.id or current_user.is_superuser:
         delete_job_by_id(id=id, db=db, owner_id=current_user.id)
-        return {"msg": "Successfully deleted."}
+        return {"detail": "Successfully deleted."}
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                         detail=f"You are not permitted!!!!")
+
+
+@router.get("/autocomplete")
+def autocomplete(term: Optional[str] = None, db: Session = Depends(get_db)):
+    jobs = search_job(term, db=db)
+    job_titles = []
+    for job in jobs:
+        job_titles.append(job.title)
+    return job_titles

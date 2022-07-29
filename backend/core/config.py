@@ -2,8 +2,7 @@ import os
 from dotenv import load_dotenv
 
 from pathlib import Path
-
-env_path = Path('.') / '.env'
+env_path = Path('.') / '.env'   # for us, we can use os.environ['ENV_PATH'] with docker environmental instead '.env')
 load_dotenv(dotenv_path=env_path)
 
 

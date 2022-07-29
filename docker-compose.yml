@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: >
+      bash -c 'while !</dev/tcp/db/5432;
+      do sleep 1;
+      done;
+      uvicorn backend.main:backend --host 0.0.0.0';
+      export ENV_PATH=.env_test;
+    volumes:
+      - .:/backend
+    ports:
+      - 8008:8000
+    environment:
+      - ENV_PATH=.env_test
+    depends_on:
+      - db
+  db:
+    image: postgres:13-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=fastapi_traefik
+      - POSTGRES_PASSWORD=fastapi_traefik
+      - POSTGRES_DB=fastapi_traefik
+
+volumes:
+  postgres_data:
